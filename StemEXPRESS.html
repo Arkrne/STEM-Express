@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STEM Express - CNHS Pre-Orders</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <style>
+        /* General Styling & Dark Theme */
+        :root {
+            --primary-color: #00ff9d; /* Bright STEM green */
+            --background-color: #121212;
+            --surface-color: #1e1e1e;
+            --text-color: #e0e0e0;
+            --dark-text: #121212;
+            --border-color: #333;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            background-image: url('https://www.transparenttextures.com/patterns/dark-matter.png'); /* Subtle texture */
+            overflow-x: hidden;
+        }
+
+        /* Header & Navigation */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 5%;
+            background-color: rgba(30, 30, 30, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            text-shadow: 0 0 10px var(--primary-color);
+        }
+
+        .cart-button {
+            position: relative;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .cart-icon {
+            width: 35px;
+            height: 35px;
+            filter: invert(80%) sepia(100%) saturate(400%) hue-rotate(90deg);
+        }
+        
+        .cart-count {
+            position: absolute;
+            top: -5px;
+            right: -10px;
+            background-color: red;
+            color: white;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+            border: 2px solid var(--background-color);
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: linear-gradient(rgba(18, 18, 18, 0.8), rgba(18, 18, 18, 1)), url('https://images.unsplash.com/photo-1543353071-873f6b6a6a89?q=80&w=2070') center/cover;
+        }
+        
+        .hero h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .hero .important-note {
+            background-color: rgba(255, 235, 59, 0.1);
+            border: 1px solid #ffeb3b;
+            padding: 1rem;
+            border-radius: 8px;
+            max-width: 800px;
+            margin: 1rem auto;
+        }
+
+        .hero .important-note a {
+            color: var(--primary-color);
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        /* Product Grid */
+        .product-container {
+            padding: 2rem 5%;
+        }
+
+        #product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .product-card {
+            background-color: var(--surface-color);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+
+        .product-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 20px rgba(0, 255, 157, 0.1);
+        }
+
+        .product-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        
+        .product-info {
+            padding: 1rem;
+        }
+
+        .product-info h3 {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .product-price {
+            color: var(--primary-color);
+            font-weight: bold;
+            font-size: 1.3rem;
+        }
+
+        /* Modal Styles (for product details, cart, and success message) */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.7);
+            backdrop-filter: blur(5px);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            background-color: var(--surface-color);
+            margin: 5% auto;
+            padding: 2rem;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 700px;
+            position: relative;
+            animation: slideIn 0.4s ease;
+        }
+
+        .close-button {
+            color: #aaa;
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            font-size: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* Product Details Modal */
+        #product-detail-content {
+            display: flex;
+            gap: 2rem;
+        }
+        #product-detail-content img {
+            width: 40%;
+            max-width: 250px;
+            height: auto;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        #product-detail-info h2 { font-size: 2rem; }
+        #product-detail-price {
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            margin: 1rem 0;
+        }
+        #product-detail-desc { margin: 1rem 0; }
+        .add-to-cart-btn {
+            background-color: var(--primary-color);
+            color: var(--dark-text);
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+        .add-to-cart-btn:hover { background-color: #00e68a; }
+        .add-to-cart-btn.added {
+            animation: cart-add-anim 0.5s ease;
+        }
+
+        /* Cart & Checkout Modal */
+        #cart-items-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+        }
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        #cart-total {
+            text-align: right;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 1rem 0;
+            color: var(--primary-color);
+        }
+
+        /* Form Styling */
+        .checkout-form {
+            margin-top: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group label {
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 0.8rem;
+            background-color: var(--background-color);
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            color: var(--text-color);
+            font-size: 1rem;
+        }
+        .form-toggle { text-align: center; margin: 1rem 0; }
+
+        /* Success Modal ("Dios Mabalos") */
+        #success-modal-content {
+            text-align: center;
+        }
+        #success-modal-content h2 {
+            font-size: 3rem;
+            font-family: 'Orbitron', sans-serif;
+            color: var(--primary-color);
+            text-shadow: 0 0 15px var(--primary-color);
+        }
+        #success-modal-content p {
+            margin-top: 1rem;
+            font-size: 1.2rem;
+        }
+        .balloon-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .balloon {
+            position: absolute;
+            bottom: -150px;
+            width: 50px;
+            height: 60px;
+            background-color: var(--primary-color);
+            border-radius: 50%;
+            opacity: 0.7;
+            animation: rise 10s infinite ease-in;
+        }
+        .balloon:before {
+            content: "";
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 10px solid var(--primary-color);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 2rem;
+            margin-top: 2rem;
+            border-top: 1px solid var(--border-color);
+            color: #888;
+        }
+
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideIn { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes cart-add-anim {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        @keyframes rise {
+            from { bottom: -150px; transform: translateX(0); }
+            to { bottom: 120%; transform: translateX(100px); }
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .logo { font-size: 1.5rem; }
+            .hero h1 { font-size: 2.5rem; }
+            #product-detail-content { flex-direction: column; align-items: center; }
+            #product-detail-content img { width: 80%; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">STEM Express</div>
+        <button class="cart-button" id="open-cart-button">
+            <img src="https://api.iconify.design/material-symbols/shopping-cart-outline.svg" alt="Cart" class="cart-icon">
+            <span class="cart-count" id="cart-count">0</span>
+        </button>
+    </header>
+
+    <main>
+        <section class="hero">
+            <h1>Student-Made Innovations</h1>
+            <p>Pre-order unique products crafted by the brilliant STEM students of CNHS.</p>
+            <div class="important-note">
+                <strong>IMPORTANT:</strong> All items are for <strong>PRE-ORDER</strong>. To get updates on your order status, delivery schedule, and for us to contact you, please FOLLOW our official Facebook page:
+                <a href="https://www.facebook.com/share/16TiJGA4Uy/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer">STEM Express on Facebook</a>.
+            </div>
+        </section>
+
+        <section class="product-container">
+            <div id="product-grid">
+                </div>
+        </section>
+    </main>
+    
+    <footer>
+        <p>&copy; 2025 STEM Express. All Rights Reserved.</p>
+        <p>Website Creator: Francis T. Saldua</p>
+    </footer>
+
+    <div id="product-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="close-product-modal">&times;</span>
+            <div id="product-detail-content">
+                <img id="product-detail-img" src="" alt="Product Image">
+                <div id="product-detail-info">
+                    <h2 id="product-detail-name"></h2>
+                    <p id="product-detail-price"></p>
+                    <p id="product-detail-desc"></p>
+                    <button class="add-to-cart-btn" id="modal-add-to-cart-btn">Add to Pre-Order Cart</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="cart-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="close-cart-modal">&times;</span>
+            <h2>Your Pre-Order Cart</h2>
+            <div id="cart-items-list">Your cart is empty.</div>
+            <div id="cart-total">Total: ₱0.00</div>
+            <hr style="border-color: var(--border-color); margin: 1.5rem 0;">
+
+            <form id="checkout-form" class="checkout-form">
+                <h3>Customer Information</h3>
+                <div class="form-group form-toggle">
+                    <label>Are you a CNHS Student?</label>
+                    <div>
+                        <input type="radio" id="is-cnhs" name="customerType" value="cnhs" checked> <label for="is-cnhs">Yes</label>
+                        &nbsp;&nbsp;&nbsp;
+                        <input type="radio" id="is-not-cnhs" name="customerType" value="other"> <label for="is-not-cnhs">No</label>
+                    </div>
+                </div>
+
+                <div id="cnhs-fields">
+                    <div class="form-group"><label for="cnhs-name">Full Name</label><input type="text" id="cnhs-name" required></div>
+                    <div class="form-group"><label for="cnhs-grade">Grade</label><input type="text" id="cnhs-grade" placeholder="e.g., 12" required></div>
+                    <div class="form-group"><label for="cnhs-section">Section</label><input type="text" id="cnhs-section" placeholder="e.g., STEM-A" required></div>
+                    <div class="form-group"><label for="cnhs-fb">Facebook Profile URL</label><input type="url" id="cnhs-fb" placeholder="https://facebook.com/your.profile" required></div>
+                    <div class="form-group"><label for="cnhs-phone">Phone Number</label><input type="tel" id="cnhs-phone" required></div>
+                    <div class="form-group">
+                        <label for="cnhs-delivery">Delivery Location</label>
+                        <select id="cnhs-delivery" required>
+                            <option value="school-campus">In School Campus (Free Delivery)</option>
+                            <option value="outside-campus">Outside Campus (Delivery fee applies)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="other-fields" style="display: none;">
+                    <div class="form-group"><label for="other-name">Full Name</label><input type="text" id="other-name" required></div>
+                    <div class="form-group"><label for="other-fb">Facebook Profile URL</label><input type="url" id="other-fb" placeholder="https://facebook.com/your.profile" required></div>
+                    <div class="form-group"><label for="other-address">Full Address (for delivery)</label><input type="text" id="other-address" required></div>
+                    <div class="form-group"><label for="other-phone">Phone Number</label><input type="tel" id="other-phone" required></div>
+                    <div class="form-group">
+                        <label for="other-delivery">Delivery Option</label>
+                        <select id="other-delivery" required>
+                            <option value="delivery">Deliver to my Address (Fee applies)</option>
+                            <option value="pickup">Self Pick-up (No fee)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="order-notes">Notes (Optional)</label>
+                    <textarea id="order-notes" rows="3" placeholder="Any special requests for the product or delivery?"></textarea>
+                </div>
+
+                <p style="font-size:0.9rem; text-align:center; color:#aaa;">By placing an order, you agree to follow our FB Page for updates. Delivery fees will be communicated via Facebook Messenger.</p>
+
+                <button type="submit" class="add-to-cart-btn" style="width: 100%; margin-top: 1rem;">Place Pre-Order Now</button>
+            </form>
+        </div>
+    </div>
+    
+    <div id="success-modal" class="modal">
+        <div class="modal-content" id="success-modal-content">
+            <div class="balloon-container" id="balloon-container"></div>
+            <h2>Dios Mabalos!</h2>
+            <p>Your pre-order has been received! We will contact you soon via Facebook Messenger for confirmation and updates. Please make sure you have followed our page.</p>
+            <button class="add-to-cart-btn" id="close-success-modal" style="margin-top: 2rem;">Close</button>
+        </div>
+    </div>
+
+
+<script>
+// =================================================================================
+// FIREBASE CONFIGURATION - UPDATED WITH YOUR KEYS
+// =================================================================================
+const firebaseConfig = {
+    apiKey: "AIzaSyDgKCFUvQ___3HXsT9xLA3ZIbchywwpY6M",
+    authDomain: "stem-express-9512e.firebaseapp.com",
+    databaseURL: "https://stem-express-9512e-default-rtdb.firebaseio.com",
+    projectId: "stem-express-9512e",
+    storageBucket: "stem-express-9512e.appspot.com",
+    messagingSenderId: "577722816518",
+    appId: "1:577722816518:web:e6c626c820d4d54a794b87"
+};
+
+// Initialize Firebase
+try {
+    firebase.initializeApp(firebaseConfig);
+    var db = firebase.database();
+    console.log("Firebase connected successfully!");
+} catch (e) {
+    console.error("Firebase initialization failed. Please check your config keys.", e);
+    alert("DATABASE CONNECTION FAILED. Please contact the website creator.");
+}
+
+// =================================================================================
+// PRODUCT DATA
+// This is where you define all your products.
+// =================================================================================
+const products = [
+    { id: 1, name: 'Quantum Quark Cookies', price: 75.00, img: 'https://via.placeholder.com/300x200.png/00ff9d/121212?text=Food', description: 'Delicious chocolate chip cookies with a sprinkle of edible glitter. A taste that bends the fabric of spacetime!' },
+    { id: 2, name: 'Galactic Brownie Blast', price: 90.00, img: 'https://via.placeholder.com/300x200.png/00ff9d/121212?text=Food', description: 'Fudgy brownies with a swirl of caramel, topped with star-shaped sprinkles. Out of this world!' },
+    { id: 3, name: 'Circuit Board Sandwich', price: 120.00, img: 'https://via.placeholder.com/300x200.png/00ff9d/121212?text=Food', description: 'A layered club sandwich cut with geometric precision. Perfectly engineered for your lunch.' },
+    { id: 4, name: 'Binary-Code Buko Pie', price: 150.00, img: 'https://via.placeholder.com/300x200.png/00ff9d/121212?text=Food', description: 'Classic Bicolano buko pie with a crust pattern that spells "YUM" in binary.' },
+    { id: 5, name: 'Tesla Coil Lemonade', price: 50.00, img: 'https://via.placeholder.com/300x200.png/00ff9d/121212?text=Drink', description: 'An electrifyingly refreshing blue lemonade that changes color when you stir it.' },
+    { id: 6, name: 'Programmable Pasta', price: 110.00, img: 'https://via.placeholder.com/300x200.png/00ff9d/121212?text=Food', description: 'Creamy carbonara that you can customize with your choice of toppings.' },
+    { id: 7, name: '3D Printed Keychain', price: 80.00, img: 'https://via.placeholder.com/300x200.png/00ff9d/121212?text=Item', description: 'A custom keychain designed and printed by our robotics club. Your name in a cool font!' },
+    { id: 8, name: 'Newton\'s Apple Crumble', price: 95.00, img: 'https://via.placeholder.com/300x200.png/00ff9d/121212?text=Food', description: 'A gravitational pull towards deliciousness. Warm apple crumble with a cinnamon twist.' },
+    { id: 9, name: 'Avogadro\'s Avocado Shake', price: 65.00, img: 'https://via.placeholder.com/300x200.png/00ff9d/121212?text=Drink', description: 'A mole-leculary perfect avocado shake. Smooth and creamy.' },
+    { id: 10, name: 'Schrodinger\'s Snack Box', price: 200.00, img: 'https://via.placeholder.com/300x200.png/00ff9d/121212?text=Item', description: 'A mystery box of 5 assorted snacks. You won\'t know what\'s inside until you open it!' },
+    { id: 11, name: 'Product 11', price: 100.00, img: 'https://via.placeholder.com/300x200.png/00ff9d/121212?text=Item', description: 'Placeholder description.' },
+    { id: 12, name: 'Product 12', price: 100.00, img: 'https://via.placeholder.com/300x200.png/00ff9d/121212?text=Item', description: 'Placeholder description.' },
+    { id: 13, name: 'Product 13', price: 100.00, img: 'https://via.placeholder.com/300x200.png/00ff9d/121212?text=Item', description: 'Placeholder description.' },
+    { id: 14, name: 'Product 14', price: 100.00, img: 'https://via.placeholder.com/300x200.png/00ff9d/121212?text=Item', description: 'Placeholder description.' },
+    { id: 15, name: 'Product 15', price: 100.00, img: 'https://via.placeholder.com/300x200.png/00ff9d/121212?text=Item', description: 'Placeholder description.' },
+    { id: 16, name: 'Product 16', price: 100.00, img: 'https://via.placeholder.com/300x200.png/00ff9d/121212?text=Item', description: 'Placeholder description.' },
+    { id: 17, name: 'Product 17', price: 100.00, img: 'https://via.placeholder.com/300x200.png/00ff9d/121212?text=Item', description: 'Placeholder description.' },
+    { id: 18, name: 'Product 18', price: 100.00, img: 'https://via.placeholder.com/300x200.png/00ff9d/121212?text=Item', description: 'Placeholder description.' },
+    { id: 19, name: 'Product 19', price: 100.00, img: 'https://via.placeholder.com/300x200.png/00ff9d/121212?text=Item', description: 'Placeholder description.' },
+    { id: 20, name: 'Product 20', price: 100.00, img: 'https://via.placeholder.com/300x200.png/00ff9d/121212?text=Item', description: 'Placeholder description.' },
+    { id: 21, name: 'Product 21', price: 100.00, img: 'https://via.placeholder.com/300x200.png/00ff9d/121212?text=Item', description: 'Placeholder description.' },
+    { id: 22, name: 'Product 22', price: 100.00, img: 'https://via.placeholder.com/300x200.png/00ff9d/121212?text=Item', description: 'Placeholder description.' },
+    { id: 23, name: 'Product 23', price: 100.00, img: 'https://via.placeholder.com/300x200.png/00ff9d/121212?text=Item', description: 'Placeholder description.' },
+    { id: 24, name: 'Product 24', price: 100.00, img: 'https://via.placeholder.com/300x200.png/00ff9d/121212?text=Item', description: 'Placeholder description.' },
+    { id: 25, name: 'Product 25', price: 100.00, img: 'https://via.placeholder.com/300x200.png/00ff9d/121212?text=Item', description: 'Placeholder description.' },
+    { id: 26, name: 'Product 26', price: 100.00, img: 'https://via.placeholder.com/300x200.png/00ff9d/121212?text=Item', description: 'Placeholder description.' },
+    { id: 27, name: 'Product 27', price: 100.00, img: 'https://via.placeholder.com/300x200.png/00ff9d/121212?text=Item', description: 'Placeholder description.' },
+    { id: 28, name: 'Product 28', price: 100.00, img: 'https://via.placeholder.com/300x200.png/00ff9d/121212?text=Item', description: 'Placeholder description.' },
+];
+
+// =================================================================================
+// WEBSITE LOGIC (Don't edit unless you know what you're doing)
+// =================================================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    const productGrid = document.getElementById('product-grid');
+    const cart = [];
+
+    // --- RENDER PRODUCTS ON PAGE LOAD ---
+    function renderProducts() {
+        productGrid.innerHTML = '';
+        products.forEach(product => {
+            const card = document.createElement('div');
+            card.className = 'product-card';
+            card.dataset.productId = product.id;
+            card.innerHTML = `
+                <img src="${product.img}" alt="${product.name}">
+                <div class="product-info">
+                    <h3>${product.name}</h3>
+                    <p class="product-price">₱${product.price.toFixed(2)}</p>
+                </div>
+            `;
+            card.addEventListener('click', () => showProductDetail(product.id));
+            productGrid.appendChild(card);
+        });
+    }
+
+    // --- MODAL HANDLING ---
+    const productModal = document.getElementById('product-modal');
+    const cartModal = document.getElementById('cart-modal');
+    const successModal = document.getElementById('success-modal');
+
+    function showModal(modal) { modal.style.display = 'block'; }
+    function hideModal(modal) { modal.style.display = 'none'; }
+
+    document.getElementById('close-product-modal').onclick = () => hideModal(productModal);
+    document.getElementById('close-cart-modal').onclick = () => hideModal(cartModal);
+    document.getElementById('close-success-modal').onclick = () => {
+        hideModal(successModal);
+        document.getElementById('balloon-container').innerHTML = ''; // Clear balloons
+    };
+    window.onclick = (event) => {
+        if (event.target == productModal) hideModal(productModal);
+        if (event.target == cartModal) hideModal(cartModal);
+        if (event.target == successModal) hideModal(successModal);
+    };
+
+    // --- PRODUCT DETAIL LOGIC ---
+    function showProductDetail(productId) {
+        const product = products.find(p => p.id === productId);
+        document.getElementById('product-detail-img').src = product.img;
+        document.getElementById('product-detail-name').textContent = product.name;
+        document.getElementById('product-detail-price').textContent = `₱${product.price.toFixed(2)}`;
+        document.getElementById('product-detail-desc').textContent = product.description;
+        document.getElementById('modal-add-to-cart-btn').dataset.productId = product.id;
+        showModal(productModal);
+    }
+    
+    // --- CART LOGIC ---
+    const cartCountEl = document.getElementById('cart-count');
+    const cartItemsList = document.getElementById('cart-items-list');
+    const cartTotalEl = document.getElementById('cart-total');
+
+    function addToCart(productId) {
+        const product = products.find(p => p.id === productId);
+        
+        const existingItem = cart.find(item => item.id === productId);
+        if (existingItem) {
+            existingItem.quantity++;
+        } else {
+            cart.push({ ...product, quantity: 1 });
+        }
+        
+        updateCart();
+    }
+    
+    function updateCart() {
+        // Update cart count icon
+        const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+        cartCountEl.textContent = totalItems;
+        
+        // Update cart modal
+        if (cart.length === 0) {
+            cartItemsList.innerHTML = 'Your cart is empty.';
+            cartTotalEl.textContent = 'Total: ₱0.00';
+            return;
+        }
+        
+        cartItemsList.innerHTML = '';
+        let total = 0;
+        cart.forEach(item => {
+            const itemEl = document.createElement('div');
+            itemEl.className = 'cart-item';
+            itemEl.innerHTML = `<span>${item.name} (x${item.quantity})</span> <span>₱${(item.price * item.quantity).toFixed(2)}</span>`;
+            cartItemsList.appendChild(itemEl);
+            total += item.price * item.quantity;
+        });
+        
+        cartTotalEl.textContent = `Total: ₱${total.toFixed(2)}`;
+    }
+    
+    // Add-to-cart button in the product detail modal
+    const modalAddToCartBtn = document.getElementById('modal-add-to-cart-btn');
+    modalAddToCartBtn.addEventListener('click', (e) => {
+        const productId = parseInt(e.target.dataset.productId);
+        addToCart(productId);
+        hideModal(productModal);
+        // Animation
+        modalAddToCartBtn.classList.add('added');
+        setTimeout(() => modalAddToCartBtn.classList.remove('added'), 500);
+        // Show cart for a moment to confirm
+        showModal(cartModal);
+        setTimeout(() => { if(cartModal.style.display === 'block') hideModal(cartModal); }, 2000);
+    });
+
+    // Open cart modal from header
+    document.getElementById('open-cart-button').addEventListener('click', () => showModal(cartModal));
+
+    // --- FORM LOGIC ---
+    const cnhsFields = document.getElementById('cnhs-fields');
+    const otherFields = document.getElementById('other-fields');
+    document.querySelectorAll('input[name="customerType"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            if (e.target.value === 'cnhs') {
+                cnhsFields.style.display = 'block';
+                otherFields.style.display = 'none';
+                // Set required attributes for visible fields
+                cnhsFields.querySelectorAll('input, select').forEach(el => el.required = true);
+                otherFields.querySelectorAll('input, select').forEach(el => el.required = false);
+            } else {
+                cnhsFields.style.display = 'none';
+                otherFields.style.display = 'block';
+                cnhsFields.querySelectorAll('input, select').forEach(el => el.required = false);
+                otherFields.querySelectorAll('input, select').forEach(el => el.required = true);
+            }
+        });
+    });
+    // Trigger change event once to set initial state
+    document.querySelector('input[name="customerType"]:checked').dispatchEvent(new Event('change'));
+
+    // --- FORM SUBMISSION ---
+    document.getElementById('checkout-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        if (cart.length === 0) {
+            alert("Your cart is empty! Please add some products before ordering.");
+            return;
+        }
+
+        const orderData = {
+            timestamp: new Date().toISOString(),
+            status: "Pending",
+            cart: cart,
+            totalPrice: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+            notes: document.getElementById('order-notes').value,
+            customerInfo: {}
+        };
+
+        const customerType = document.querySelector('input[name="customerType"]:checked').value;
+        if (customerType === 'cnhs') {
+            orderData.customerInfo = {
+                type: 'CNHS Student',
+                name: document.getElementById('cnhs-name').value,
+                gradeSection: `${document.getElementById('cnhs-grade').value} - ${document.getElementById('cnhs-section').value}`,
+                fbUrl: document.getElementById('cnhs-fb').value,
+                phone: document.getElementById('cnhs-phone').value,
+                deliveryLocation: document.getElementById('cnhs-delivery').value,
+            };
+        } else {
+            orderData.customerInfo = {
+                type: 'Non-CNHS Customer',
+                name: document.getElementById('other-name').value,
+                fbUrl: document.getElementById('other-fb').value,
+                address: document.getElementById('other-address').value,
+                phone: document.getElementById('other-phone').value,
+                deliveryOption: document.getElementById('other-delivery').value,
+            };
+        }
+        
+        // --- SEND DATA TO FIREBASE ---
+        if (db) {
+            db.ref('orders').push(orderData)
+                .then(() => {
+                    console.log("Order submitted successfully!");
+                    // Reset everything and show success message
+                    cart.length = 0; // Clear the cart array
+                    updateCart();
+                    document.getElementById('checkout-form').reset();
+                    hideModal(cartModal);
+                    showSuccessModal();
+                })
+                .catch((error) => {
+                    console.error("Error submitting order: ", error);
+                    alert("There was an error submitting your order. Please try again.");
+                });
+        } else {
+            alert("Database is not connected. Could not place order.");
+        }
+    });
+
+    // --- SUCCESS MODAL & ANIMATION ---
+    function showSuccessModal() {
+        showModal(successModal);
+        const balloonContainer = document.getElementById('balloon-container');
+        for (let i = 0; i < 15; i++) {
+            const balloon = document.createElement('div');
+            balloon.className = 'balloon';
+            balloon.style.left = `${Math.random() * 100}%`;
+            balloon.style.animationDuration = `${Math.random() * 5 + 5}s`; // 5 to 10 seconds
+            balloon.style.animationDelay = `${Math.random() * 2}s`;
+            balloon.style.backgroundColor = `hsl(${Math.random() * 360}, 70%, 60%)`;
+            balloonContainer.appendChild(balloon);
+        }
+    }
+
+
+    // --- INITIALIZE ---
+    renderProducts();
+});
+</script>
+
+</body>
+</html>
