@@ -13,7 +13,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <style>
-        /* THEME: High-End & VIBRANT with Textures */
         :root {
             --primary-red: #d90429;
             --secondary-blue: #0077b6;
@@ -157,12 +156,11 @@
             transform: translateY(-8px);
             box-shadow: 0 12px 35px rgba(217, 4, 41, 0.1);
         }
-        .product-card img { width: 100%; height: 220px; object-fit: cover; }
+        .product-card img { width: 100%; height: 220px; object-fit: cover; background-color: #f0f0f0; }
         .product-info { padding: 1.5rem; }
         .product-info h3 { font-family: var(--heading-font); font-size: 1.5rem; margin-bottom: 0.75rem; }
         .product-price { color: var(--primary-red); font-weight: 600; font-size: 1.25rem; }
 
-        /* Modal Styles */
         .modal {
             display: none;
             position: fixed;
@@ -184,7 +182,7 @@
             margin: 5vh auto;
             position: relative;
             animation: slideDown 0.4s ease-out;
-            max-height: 90vh; /* <-- FIX: Prevents modal from being taller than the screen */
+            max-height: 90vh;
             display: flex;
             flex-direction: column;
         }
@@ -216,19 +214,9 @@
         }
         .add-to-cart-btn:hover { background-color: #af0325; transform: scale(1.05); }
         
-        /* Form & Modal Content */
-        .modal-header {
-            padding: 1.5rem 1.5rem 1rem 1.5rem;
-            flex-shrink: 0; /* <-- FIX: Header doesn't shrink */
-        }
         .modal-body {
-            padding: 0 1.5rem;
-            overflow-y: auto; /* <-- FIX: Main content area scrolls */
-            flex-grow: 1;
-        }
-        .modal-footer {
             padding: 1.5rem;
-            flex-shrink: 0; /* <-- FIX: Footer doesn't shrink */
+            overflow-y: auto;
         }
 
         .form-group {
@@ -247,7 +235,6 @@
              box-shadow: 0 0 0 3px rgba(217, 4, 41, 0.1);
         }
 
-        /* FIX: Visual feedback for invalid fields */
         .form-group input:invalid:not(:placeholder-shown),
         .form-group textarea:invalid:not(:placeholder-shown) {
             border-color: var(--primary-red);
@@ -307,7 +294,7 @@
     <div id="product-modal" class="modal">
         <div class="modal-content">
             <span class="close-button" id="close-product-modal">&times;</span>
-            <div id="product-detail-content">
+            <div id="product-detail-content" class="modal-body">
                  <img id="product-detail-img" src="" alt="Product Image" style="width: 100%; border-radius: 8px; margin-bottom: 1.5rem;">
                  <h2 id="product-detail-name"></h2>
                  <p id="product-detail-price"></p>
@@ -319,11 +306,8 @@
     <div id="cart-modal" class="modal">
         <div class="modal-content">
             <span class="close-button" id="close-cart-modal">&times;</span>
-            <div class="modal-header">
-                <h2 style="font-family: var(--heading-font); text-align:center;">Your Pre-Order</h2>
-            </div>
-            
             <div class="modal-body">
+                <h2 style="font-family: var(--heading-font); text-align:center; margin-bottom: 1rem;">Your Pre-Order</h2>
                 <div id="cart-items-list" style="margin-bottom: 2rem;">Your cart is empty.</div>
                 <div id="cart-total" style="font-family: var(--heading-font); font-size: 1.5rem; text-align: right;">Total: ₱0.00</div>
                 <hr style="border-color: #f1f1f1; margin: 1.5rem 0;">
@@ -364,15 +348,12 @@
                             </select>
                         </div>
                     </div>
-                    <div class="form-group" style="margin-top: 1rem;">
+                    <div class="form-group">
                         <label for="order-notes">Notes (Optional)</label>
                         <textarea id="order-notes" rows="3" placeholder="Any special requests?"></textarea>
                     </div>
+                    <button type="submit" class="add-to-cart-btn" style="width: 100%; margin-top: 2rem;">Place Pre-Order</button>
                 </form>
-            </div>
-            
-            <div class="modal-footer">
-                <button type="submit" form="checkout-form" class="add-to-cart-btn" style="width: 100%;">Place Pre-Order</button>
             </div>
         </div>
     </div>
@@ -406,16 +387,32 @@ try {
     alert("DATABASE CONNECTION FAILED.");
 }
 
-// PRODUCT DATA
+// PRODUCT DATA (Updated to 24 blank slots)
 const products = [
-    { id: 1, name: 'Artisanal Burger', price: 99.00, img: 'https://images.unsplash.com/photo-1571091718767-18b5b1457add?q=80&w=2072', description: 'A juicy 100% pure beef patty with a house-made secret sauce, crisp lettuce, and heirloom tomatoes on a brioche bun.' },
-    { id: 2, name: 'Gourmet Fried Chicken', price: 85.00, img: 'https://images.unsplash.com/photo-1562967914-608f82629710?q=80&w=2070', description: 'Buttermilk-brined chicken, perfectly seasoned and fried until golden brown and exceptionally crispy.' },
-    { id: 3, name: 'Classic Bolognese', price: 75.00, img: 'https://images.unsplash.com/photo-1598866594240-a3b5a9502056?q=80&w=2070', description: 'A rich, slow-simmered meat sauce with high-quality pasta, finished with fresh parmesan cheese.' },
-    { id: 4, name: 'Hand-Cut Fries', price: 50.00, img: 'https://images.unsplash.com/photo-1576107232684-1279f390859f?q=80&w=1974', description: 'Crispy on the outside, fluffy on the inside. Double-fried and lightly salted to perfection.' },
-    { id: 5, name: 'Classic Cola Float', price: 60.00, img: 'https://images.unsplash.com/photo-1553859943-a5f1a5823c3a?q=80&w=1974', description: 'A refreshing glass of premium cola topped with a scoop of creamy vanilla bean ice cream.' },
-    { id: 6, name: 'Decadent Sundae', price: 45.00, img: 'https://images.unsplash.com/photo-1567206563064-6f60f40a2b57?q=80&w=1974', description: 'Your choice of rich hot fudge or a vibrant strawberry coulis over smooth vanilla ice cream.' },
-    { id: 7, name: 'Braised Beef Pares', price: 120.00, img: 'https://images.unsplash.com/photo-1628448173932-552f45d74230?q=80&w=2070', description: 'A classic Filipino beef stew, slow-cooked until tender, served with garlic fried rice and a bowl of hot broth.' },
-    { id: 8, name: 'Premium Tapsilog', price: 110.00, img: 'https://images.unsplash.com/photo-1628448173919-b51680190528?q=80&w=2070', description: 'Marinated sirloin beef tapa, garlic fried rice, and a perfectly cooked sunny-side-up egg.' },
+    { id: 1, name: 'Product 1', price: 100.00, img: '', description: 'This is a description for Product 1.' },
+    { id: 2, name: 'Product 2', price: 100.00, img: '', description: 'This is a description for Product 2.' },
+    { id: 3, name: 'Product 3', price: 100.00, img: '', description: 'This is a description for Product 3.' },
+    { id: 4, name: 'Product 4', price: 100.00, img: '', description: 'This is a description for Product 4.' },
+    { id: 5, name: 'Product 5', price: 100.00, img: '', description: 'This is a description for Product 5.' },
+    { id: 6, name: 'Product 6', price: 100.00, img: '', description: 'This is a description for Product 6.' },
+    { id: 7, name: 'Product 7', price: 100.00, img: '', description: 'This is a description for Product 7.' },
+    { id: 8, name: 'Product 8', price: 100.00, img: '', description: 'This is a description for Product 8.' },
+    { id: 9, name: 'Product 9', price: 100.00, img: '', description: 'This is a description for Product 9.' },
+    { id: 10, name: 'Product 10', price: 100.00, img: '', description: 'This is a description for Product 10.' },
+    { id: 11, name: 'Product 11', price: 100.00, img: '', description: 'This is a description for Product 11.' },
+    { id: 12, name: 'Product 12', price: 100.00, img: '', description: 'This is a description for Product 12.' },
+    { id: 13, name: 'Product 13', price: 100.00, img: '', description: 'This is a description for Product 13.' },
+    { id: 14, name: 'Product 14', price: 100.00, img: '', description: 'This is a description for Product 14.' },
+    { id: 15, name: 'Product 15', price: 100.00, img: '', description: 'This is a description for Product 15.' },
+    { id: 16, name: 'Product 16', price: 100.00, img: '', description: 'This is a description for Product 16.' },
+    { id: 17, name: 'Product 17', price: 100.00, img: '', description: 'This is a description for Product 17.' },
+    { id: 18, name: 'Product 18', price: 100.00, img: '', description: 'This is a description for Product 18.' },
+    { id: 19, name: 'Product 19', price: 100.00, img: '', description: 'This is a description for Product 19.' },
+    { id: 20, name: 'Product 20', price: 100.00, img: '', description: 'This is a description for Product 20.' },
+    { id: 21, name: 'Product 21', price: 100.00, img: '', description: 'This is a description for Product 21.' },
+    { id: 22, name: 'Product 22', price: 100.00, img: '', description: 'This is a description for Product 22.' },
+    { id: 23, name: 'Product 23', price: 100.00, img: '', description: 'This is a description for Product 23.' },
+    { id: 24, name: 'Product 24', price: 100.00, img: '', description: 'This is a description for Product 24.' },
 ];
 
 // WEBSITE LOGIC
@@ -493,7 +490,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.querySelector('input[name="customerType"]:checked').dispatchEvent(new Event('change'));
 
-    // FIX: Attach event listener to the form itself, not a button outside of it
     const checkoutForm = document.getElementById('checkout-form');
     checkoutForm.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -513,7 +509,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         db.ref('orders').push(orderData).then(() => {
             cart.length = 0; updateCart();
-            checkoutForm.reset(); // Use the form variable to reset
+            checkoutForm.reset();
             hideModal(cartModal); showModal(successModal);
         }).catch(() => alert("Error submitting order."));
     });
