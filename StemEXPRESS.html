@@ -184,7 +184,7 @@
                     <div class="mb-12 lg:mb-0">
                         <div class="relative">
                             <div class="relative rounded-xl overflow-hidden shadow-2xl">
-                                <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80" alt="STEM Students" class="w-full h-auto" onerror="this.onerror=null;this.src='https://placehold.co/600x400/0f172a/f8fafc?text=STEM+Students';">
+                                <img src="https://i.imgur.com/p8y5g4s.jpeg" alt="STEM Students" class="w-full h-auto" onerror="this.onerror=null;this.src='https://placehold.co/600x400/0f172a/f8fafc?text=STEM+Students';">
                                 <div class="absolute inset-0 bg-gradient-to-t from-purple-900 to-transparent opacity-70"></div>
                             </div>
                         </div>
@@ -272,20 +272,27 @@
 
     <!-- Firebase SDK -->
     <script type="module">
+        // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
+        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
+        // Your web app's Firebase configuration
         const firebaseConfig = {
-            apiKey: "AIzaSyDgKCFUvQ___3HXsT9xLA3ZIbchywwpY6M", // IMPORTANT: Replace with your actual Firebase config
-            authDomain: "stem-express-9512e.firebaseapp.com",
-            projectId: "stem-express-9512e",
-            storageBucket: "stem-express-9512e.appspot.com",
-            messagingSenderId: "577722816518",
-            appId: "1:577722816518:web:e6c626c820d4d54a794b87"
+          apiKey: "AIzaSyDgKCFUvQ___3HXsT9xLA3ZIbchywwpY6M",
+          authDomain: "stem-express-9512e.firebaseapp.com",
+          databaseURL: "https://stem-express-9512e-default-rtdb.firebaseio.com",
+          projectId: "stem-express-9512e",
+          storageBucket: "stem-express-9512e.appspot.com",
+          messagingSenderId: "577722816518",
+          appId: "1:577722816518:web:e6c626c820d4d54a794b87",
+          measurementId: "G-W2BL0DXXG3"
         };
 
+        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        const analytics = getAnalytics(app);
+        const db = getDatabase(app);
 
         const products = [
             { id: 1, name: "Timmy Cookies", price: 1, image: "https://i.imgur.com/LErvFbm.jpeg", description: "Taong nag mahal ng wagas, at dahil duon naubusan siya ng pampagas", ingredients: "Cute, Cutipie, Cute parin inulit ko lang, Pogi, Cute naman ulit", tagline: "Balik ka na pls", nutrition: "Calories: Imissyou" },
@@ -394,7 +401,6 @@
             const cartSummary = document.getElementById('cart-summary');
             const emptyCartMessage = document.getElementById('empty-cart-message');
 
-            // Safety check to prevent errors if elements are not found
             if (!cartItemsContainer || !cartSummary || !emptyCartMessage) {
                 console.error("Cart UI elements not found. Cannot update cart view.");
                 return;
@@ -439,7 +445,7 @@
             document.getElementById('mobile-cart-count').textContent = count;
         }
         
-        // --- MODAL LOGIC ---
+        // --- MODAL LOGIC & EVENT HANDLING ---
         function openModal(modalId) {
             const modal = document.getElementById(modalId);
             if (modal) {
@@ -480,7 +486,6 @@
 
         function openCheckout() {
             if (cart.length === 0) {
-                // A simple alert is fine for now, but a styled modal would be better.
                 const notification = document.createElement('div');
                 notification.className = 'fixed top-5 right-5 bg-red-500 text-white py-2 px-4 rounded-lg shadow-lg animate-pulse';
                 notification.textContent = 'Your cart is empty!';
@@ -498,10 +503,8 @@
             openModal('checkout-modal');
         }
         
-        // --- EVENT HANDLING ---
         function setupEventListeners() {
             document.addEventListener('click', e => {
-                // Product Card buttons
                 if (e.target.closest('.add-to-cart')) {
                     const button = e.target.closest('.add-to-cart');
                     addToCart(button.dataset.id);
@@ -513,8 +516,6 @@
                     }, 2000);
                 }
                 if (e.target.closest('.view-product')) viewProduct(e.target.closest('.view-product').dataset.id);
-
-                // Cart Sidebar
                 if (e.target.closest('#cart-button') || e.target.closest('#mobile-cart-button')) openModal('cart-sidebar');
                 if (e.target.closest('#close-cart') || e.target.id === 'close-cart-overlay') closeModal('cart-sidebar');
                 if (e.target.closest('.remove-item')) removeFromCart(e.target.closest('.remove-item').dataset.id);
@@ -526,8 +527,6 @@
                     const item = cart.find(i => i.id == e.target.closest('.decrease-quantity').dataset.id);
                     if(item) updateCartItemQuantity(item.id, item.quantity - 1);
                 }
-
-                // Product Modal
                 if (e.target.closest('#close-modal')) closeModal('product-modal');
                 if (e.target.closest('#increase-quantity')) {
                     let qtyEl = document.getElementById('product-quantity');
@@ -542,14 +541,10 @@
                     addToCart(e.target.dataset.id, quantity);
                     closeModal('product-modal');
                 }
-
-                // Checkout
                 if (e.target.id === 'checkout-button') openCheckout();
                 if (e.target.id === 'close-checkout-modal') closeModal('checkout-modal');
                 if (e.target.id === 'place-order') handlePlaceOrder();
                 if (e.target.closest('#close-confirmation')) closeModal('confirmation-modal');
-
-                // Nav links
                 if (e.target.closest('.nav-link')) {
                     e.preventDefault();
                     const targetId = e.target.closest('.nav-link').getAttribute('href');
@@ -557,18 +552,15 @@
                     if (targetElement) {
                         targetElement.scrollIntoView({ behavior: 'smooth' });
                     }
-                    if (window.innerWidth < 768) { // Close mobile menu on click
+                    if (window.innerWidth < 768) {
                         document.getElementById('mobile-menu').classList.add('hidden');
                     }
                 }
-                
-                // Mobile Menu
                 if (e.target.closest('#mobile-menu-button')) {
                     document.getElementById('mobile-menu').classList.toggle('hidden');
                 }
             });
             
-            // Input event listeners
             document.getElementById('product-search').addEventListener('input', e => {
                 const searchTerm = e.target.value.toLowerCase();
                 const filtered = products.filter(p => p.name.toLowerCase().includes(searchTerm) || p.description.toLowerCase().includes(searchTerm));
@@ -624,25 +616,17 @@
 
             if (isStudent) {
                 customerInfo = {
-                    type: 'Student',
-                    name: document.getElementById('student-name').value,
-                    gradeSection: document.getElementById('grade-section').value,
-                    fbUrl: document.getElementById('student-fb').value,
-                    phone: document.getElementById('student-phone').value,
+                    type: 'Student', name: document.getElementById('student-name').value, gradeSection: document.getElementById('grade-section').value,
+                    fbUrl: document.getElementById('student-fb').value, phone: document.getElementById('student-phone').value,
                     deliveryOption: document.querySelector('input[name="student-delivery"]:checked').value,
-                    deliveryAddress: document.getElementById('student-delivery-address').value,
-                    notes: document.getElementById('notes').value,
+                    deliveryAddress: document.getElementById('student-delivery-address').value, notes: document.getElementById('notes').value,
                 };
                 if (!customerInfo.name || !customerInfo.gradeSection) validationError = true;
             } else {
                 customerInfo = {
-                    type: 'Non-Student',
-                    name: document.getElementById('non-student-name').value,
-                    fbUrl: document.getElementById('non-student-fb').value,
-                    address: document.getElementById('non-student-address').value,
-                    phone: document.getElementById('non-student-phone').value,
-                    deliveryOption: document.querySelector('input[name="non-student-delivery"]:checked').value,
-                    notes: document.getElementById('notes').value,
+                    type: 'Non-Student', name: document.getElementById('non-student-name').value, fbUrl: document.getElementById('non-student-fb').value,
+                    address: document.getElementById('non-student-address').value, phone: document.getElementById('non-student-phone').value,
+                    deliveryOption: document.querySelector('input[name="non-student-delivery"]:checked').value, notes: document.getElementById('notes').value,
                 };
                 if (!customerInfo.name || !customerInfo.address || !customerInfo.phone) validationError = true;
             }
@@ -658,17 +642,15 @@
             const deliveryFee = parseFloat(document.getElementById('checkout-delivery').textContent.replace('₱', ''));
             
             const orderData = {
-                customerInfo,
-                items: cart.map(item => ({ id: item.id, name: item.name, quantity: item.quantity, price: item.price })),
-                subtotal,
-                deliveryFee,
-                total: subtotal + deliveryFee,
-                status: 'Pending',
-                createdAt: new Date().toISOString()
+                customerInfo, items: cart.map(item => ({ id: item.id, name: item.name, quantity: item.quantity, price: item.price })),
+                subtotal, deliveryFee, total: subtotal + deliveryFee, status: 'Pending', createdAt: new Date().toISOString()
             };
 
             try {
-                await addDoc(collection(db, "orders"), orderData);
+                const ordersRef = ref(db, 'orders');
+                const newOrderRef = push(ordersRef);
+                await set(newOrderRef, orderData);
+
                 closeModal('checkout-modal');
                 openModal('confirmation-modal');
                 createConfetti();
@@ -693,12 +675,12 @@
 
             try {
                 const messageData = {
-                    name: form.name.value,
-                    email: form.email.value,
-                    message: form.message.value,
-                    submittedAt: new Date()
+                    name: form.name.value, email: form.email.value,
+                    message: form.message.value, submittedAt: new Date().toISOString()
                 };
-                await addDoc(collection(db, "messages"), messageData);
+                const messagesRef = ref(db, 'messages');
+                const newMessageRef = push(messagesRef);
+                await set(newMessageRef, messageData);
                 
                 feedbackEl.textContent = "Thank you! Your message has been sent.";
                 feedbackEl.className = "text-emerald-400";
@@ -713,7 +695,7 @@
             }
         }
         
-        // --- UTILITY FUNCTIONS ---
+        // --- UTILITY & UI FUNCTIONS ---
         function showAddToCartAnimation() {
             const cartIcon = document.getElementById('cart-button').querySelector('i');
             cartIcon.classList.add('cart-bounce');
@@ -733,7 +715,6 @@
             }
         }
         
-        // --- RENDER ALL MODALS (to keep main HTML clean) ---
         function renderAllModals() {
             document.getElementById('modals-container').innerHTML = `
                 <!-- Cart Sidebar -->
@@ -804,7 +785,6 @@
                                 <button id="close-checkout-modal" class="text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
                             </div>
                             <div class="space-y-6">
-                                <!-- Form content here -->
                                 <div>
                                     <label class="block text-sm font-medium text-gray-300 mb-1">Are you a CNHS student?</label>
                                     <div class="flex space-x-4"><label class="inline-flex items-center"><input type="radio" name="isStudent" value="yes" class="form-radio text-purple-600" checked><span class="ml-2 text-gray-300">Yes</span></label><label class="inline-flex items-center"><input type="radio" name="isStudent" value="no" class="form-radio text-purple-600"><span class="ml-2 text-gray-300">No</span></label></div>
