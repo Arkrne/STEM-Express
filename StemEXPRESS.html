@@ -7,6 +7,12 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Use Firebase Compat Libraries for broader compatibility -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-analytics-compat.js"></script>
+
     <style>
         :root {
             --primary: #6d28d9;
@@ -270,13 +276,8 @@
     <!-- All Modals and Cart Sidebar -->
     <div id="modals-container"></div>
 
-    <!-- Firebase SDK -->
-    <script type="module">
-        // Import the functions you need from the SDKs you need
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
-        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
-
+    <!-- Main Application Script -->
+    <script>
         // Your web app's Firebase configuration
         const firebaseConfig = {
           apiKey: "AIzaSyDgKCFUvQ___3HXsT9xLA3ZIbchywwpY6M",
@@ -290,9 +291,9 @@
         };
 
         // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
-        const db = getDatabase(app);
+        firebase.initializeApp(firebaseConfig);
+        const analytics = firebase.analytics();
+        const db = firebase.database();
 
         const products = [
             { id: 1, name: "Timmy Cookies", price: 1, image: "https://i.imgur.com/LErvFbm.jpeg", description: "Taong nag mahal ng wagas, at dahil duon naubusan siya ng pampagas", ingredients: "Cute, Cutipie, Cute parin inulit ko lang, Pogi, Cute naman ulit", tagline: "Balik ka na pls", nutrition: "Calories: Imissyou" },
@@ -386,7 +387,7 @@
         function updateCartItemQuantity(productId, quantity) {
             const item = cart.find(item => item.id == productId);
             if (item) {
-                item.quantity = Math.max(1, quantity); // Ensure quantity is at least 1
+                item.quantity = Math.max(1, quantity);
                 updateCart();
             }
         }
@@ -402,7 +403,7 @@
             const emptyCartMessage = document.getElementById('empty-cart-message');
 
             if (!cartItemsContainer || !cartSummary || !emptyCartMessage) {
-                console.error("Cart UI elements not found. Cannot update cart view.");
+                console.error("Cart UI elements not found.");
                 return;
             }
             
@@ -647,9 +648,9 @@
             };
 
             try {
-                const ordersRef = ref(db, 'orders');
-                const newOrderRef = push(ordersRef);
-                await set(newOrderRef, orderData);
+                const ordersRef = db.ref('orders');
+                const newOrderRef = ordersRef.push();
+                await newOrderRef.set(orderData);
 
                 closeModal('checkout-modal');
                 openModal('confirmation-modal');
@@ -678,9 +679,9 @@
                     name: form.name.value, email: form.email.value,
                     message: form.message.value, submittedAt: new Date().toISOString()
                 };
-                const messagesRef = ref(db, 'messages');
-                const newMessageRef = push(messagesRef);
-                await set(newMessageRef, messageData);
+                const messagesRef = db.ref('messages');
+                const newMessageRef = messagesRef.push();
+                await newMessageRef.set(messageData);
                 
                 feedbackEl.textContent = "Thank you! Your message has been sent.";
                 feedbackEl.className = "text-emerald-400";
